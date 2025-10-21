@@ -23,11 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "hx711.h"
 #include "stdio.h"
-#include "stdint.h"
-#include "inttypes.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,10 +33,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define no_weight_reading  370600
-//#define weight_reading     412107
-//#define weight             60
-#define scale              (41507/60)
+extern UART_HandleTypeDef huart1;
+int __io_putchar(int ch) {
+    HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+    return ch;
+}
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -51,11 +48,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern UART_HandleTypeDef huart1;
-int __io_putchar(int ch) {
-    HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-    return ch;
-}
+uint16_t pulseCount ;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -100,27 +93,19 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HX711_pin_Config my_hx711 ;
-  my_hx711.ClockPort = HX711_CLK_PIN_GPIO_Port;
-  my_hx711.ClockPin = HX711_CLK_PIN_Pin ;
-  my_hx711.DataPort = HX711_DATA_PIN_GPIO_Port ;
-  my_hx711.DataPin = HX711_DATA_PIN_Pin ;
-
-  int32_t reading = 0 ;
-  int32_t grams = 0 ;
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-     reading = HX711_read(&my_hx711);
-	 grams = (reading - no_weight_reading) / scale;
-//	  printf("grams = %ld \n" , reading);
-     printf("grams = %" PRId32 "\n", grams);
+//	      	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);
 
-//	  printf("Value of my_int32 is: %03" PRId32 "\n", reading);
+    if (pulseCount >= 220){
+    	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_RESET);
+
+    }
 
     /* USER CODE BEGIN 3 */
   }
@@ -169,6 +154,13 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == flow_sensor_Pin)
+    {
+        pulseCount ++ ;
+    }
+}
 /* USER CODE END 4 */
 
 /**
