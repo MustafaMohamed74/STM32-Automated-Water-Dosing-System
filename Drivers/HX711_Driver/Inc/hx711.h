@@ -11,6 +11,8 @@
 #include "stm32f4xx_hal.h"
 #include "gpio.h"
 
+#define no_weight_reading   370600
+#define scale               (41507/60)
 
 typedef struct {
 	GPIO_TypeDef * DataPort ;
@@ -21,5 +23,6 @@ typedef struct {
 
 int32_t HX711_read(HX711_pin_Config * HX711);
 uint8_t HX711_is_ready(HX711_pin_Config * HX711);
+uint16_t HX711_balance_waight(HX711_pin_Config * HX711);
 
 #endif /* HX711_DRIVER_INC_HX711_H_ */

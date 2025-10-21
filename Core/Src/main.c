@@ -37,8 +37,10 @@ extern UART_HandleTypeDef huart1;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define no_weight_reading  370600
-#define scale              (41507/60)
+#define water_ratio        2
+
+#define pulses_per_liter   350
+#define ml_per_liter       1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -56,11 +58,18 @@ extern UART_HandleTypeDef huart1;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 int __io_putchar(int ch);
+void start_dosing(void);
+void stop_dosing(void);
+void top_up_dosing(void);
+
+uint16_t calculate_desired_water_amount(uint16_t ingredient_grams);
+uint16_t map_ml_to_pulses(uint16_t desired_ml);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint16_t pulseCount ;
+HX711_pin_Config my_hx711 ;
 /* USER CODE END 0 */
 
 /**
@@ -94,14 +103,17 @@ int main(void)
 	MX_GPIO_Init();
 	MX_USART1_UART_Init();
 	/* USER CODE BEGIN 2 */
-	HX711_pin_Config my_hx711 ;
-	my_hx711.ClockPort = HX711_CLK_PIN_GPIO_Port;
-	my_hx711.ClockPin = HX711_CLK_PIN_Pin ;
-	my_hx711.DataPort = HX711_DATA_PIN_GPIO_Port ;
-	my_hx711.DataPin = HX711_DATA_PIN_Pin ;
+	HAL_GPIO_WritePin(solenoid_valve_GPIO_Port, solenoid_valve_Pin, GPIO_PIN_RESET);
 
-	int32_t reading = 0 ;
-	int32_t grams = 0 ;
+	my_hx711.ClockPort = HX711_CLK_GPIO_Port;
+	my_hx711.ClockPin = HX711_CLK_Pin ;
+	my_hx711.DataPort = HX711_DATA_GPIO_Port ;
+	my_hx711.DataPin = HX711_DATA_Pin ;
+
+//	int32_t reading = 0 ;
+	uint16_t grams = 0 ;
+	uint16_t water_ml = 0 ;
+	uint16_t desired_pulses = 0 ;
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -111,9 +123,25 @@ int main(void)
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		reading = HX711_read(&my_hx711);
-		grams = (reading - no_weight_reading) / scale;
-		printf("grams = %" PRId32 "\n", grams);
+		if (HAL_GPIO_ReadPin(Stop_button_GPIO_Port, Stop_button_Pin) == GPIO_PIN_RESET){
+			stop_dosing();
+		}
+		else if (HAL_GPIO_ReadPin(Start_button_GPIO_Port, Start_button_Pin) == GPIO_PIN_RESET) {
+			pulseCount = 0 ;
+			grams = HX711_balance_waight(&my_hx711);
+			water_ml = calculate_desired_water_amount(grams);
+			desired_pulses = map_ml_to_pulses(water_ml);
+			start_dosing();
+		}
+		else if(HAL_GPIO_ReadPin(Top_up_button_GPIO_Port, Top_up_button_Pin) == GPIO_PIN_RESET){
+			top_up_dosing();
+		}
+
+		if (pulseCount >= desired_pulses){
+			stop_dosing();
+			pulseCount = 0 ;
+
+		}
 	}
 	/* USER CODE END 3 */
 }
@@ -163,6 +191,36 @@ int __io_putchar(int ch) {
 	HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
 	return ch;
 }
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if (GPIO_Pin == water_flow_sensor_Pin)
+	{
+		pulseCount ++ ;
+	}
+}
+
+void start_dosing(void){
+	HAL_GPIO_WritePin(solenoid_valve_GPIO_Port, solenoid_valve_Pin, GPIO_PIN_SET);
+}
+void stop_dosing(void){
+	HAL_GPIO_WritePin(solenoid_valve_GPIO_Port, solenoid_valve_Pin, GPIO_PIN_RESET);
+}
+void top_up_dosing(void){
+	HAL_GPIO_WritePin(solenoid_valve_GPIO_Port, solenoid_valve_Pin, GPIO_PIN_SET);
+}
+
+uint16_t calculate_desired_water_amount(uint16_t ingredient_grams){
+	return (ingredient_grams * water_ratio);
+}
+
+uint16_t map_ml_to_pulses(uint16_t desired_ml)
+{
+
+    uint16_t pulses = (uint16_t)((desired_ml * pulses_per_liter) / ml_per_liter);
+    return pulses;
+}
+
 /* USER CODE END 4 */
 
 /**

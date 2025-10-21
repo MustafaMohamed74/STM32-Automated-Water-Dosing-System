@@ -63,9 +63,9 @@ void Error_Handler(void);
 #define Stop_button_GPIO_Port GPIOA
 #define Top_up_button_Pin GPIO_PIN_2
 #define Top_up_button_GPIO_Port GPIOA
-#define water_dlow_sensor_Pin GPIO_PIN_1
-#define water_dlow_sensor_GPIO_Port GPIOB
-#define water_dlow_sensor_EXTI_IRQn EXTI1_IRQn
+#define water_flow_sensor_Pin GPIO_PIN_1
+#define water_flow_sensor_GPIO_Port GPIOB
+#define water_flow_sensor_EXTI_IRQn EXTI1_IRQn
 #define solenoid_valve_Pin GPIO_PIN_11
 #define solenoid_valve_GPIO_Port GPIOA
 #define HX711_DATA_Pin GPIO_PIN_3

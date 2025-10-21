@@ -47,3 +47,9 @@ int32_t HX711_read(HX711_pin_Config * HX711){
 uint8_t HX711_is_ready(HX711_pin_Config * HX711){
 	return (HAL_GPIO_ReadPin(HX711->DataPort, HX711->DataPin) == GPIO_PIN_RESET ) ;
 }
+
+uint16_t HX711_balance_waight(HX711_pin_Config * HX711){
+	int32_t reading = HX711_read(HX711);
+
+	return (reading - no_weight_reading) / scale;
+}
