@@ -10,10 +10,10 @@
 
 #include "stm32f4xx_hal.h"
 #include "gpio.h"
-
-#define no_weight_reading   370600
-#define scale               (41507/60)
-
+#define no_weight_reading  363150
+//#define weight_reading     403600
+//#define weight             60
+#define scale              (40450/60)
 typedef struct {
 	GPIO_TypeDef * DataPort ;
 	uint16_t DataPin ;

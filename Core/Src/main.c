@@ -114,6 +114,17 @@ int main(void)
 	uint16_t grams = 0 ;
 	uint16_t water_ml = 0 ;
 	uint16_t desired_pulses = 0 ;
+	uint8_t flag = 1 ;
+
+	uint8_t last_stop_state = 1 ;
+	uint8_t current_stop_state = 0 ;
+
+	uint8_t last_start_state = 1 ;
+	uint8_t	current_start_state = 0;
+
+	uint8_t last_topup_state = 1 ;
+	uint8_t	current_topup_state = 0;
+
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -121,27 +132,48 @@ int main(void)
 	while (1)
 	{
 		/* USER CODE END WHILE */
-
+//		printf("65\n");
+		current_stop_state  =  HAL_GPIO_ReadPin(Stop_button_GPIO_Port, Stop_button_Pin);
+		current_start_state = HAL_GPIO_ReadPin(Start_button_GPIO_Port, Start_button_Pin) ;
+		current_topup_state = HAL_GPIO_ReadPin(Top_up_button_GPIO_Port, Top_up_button_Pin) ;
 		/* USER CODE BEGIN 3 */
-		if (HAL_GPIO_ReadPin(Stop_button_GPIO_Port, Stop_button_Pin) == GPIO_PIN_RESET){
+		if (current_stop_state == 0 && last_stop_state == 1 ){
 			stop_dosing();
 		}
-		else if (HAL_GPIO_ReadPin(Start_button_GPIO_Port, Start_button_Pin) == GPIO_PIN_RESET) {
+		else if (current_start_state == 0 && last_start_state == 1) {
 			pulseCount = 0 ;
 			grams = HX711_balance_waight(&my_hx711);
+//		    printf("grams = %" PRId16 "\n", grams);
 			water_ml = calculate_desired_water_amount(grams);
+//		     printf("water_ml = %" PRId16 "\n", water_ml);
+
 			desired_pulses = map_ml_to_pulses(water_ml);
+//			printf("desired_pulses = %" PRId16 "\n", desired_pulses);
 			start_dosing();
 		}
-		else if(HAL_GPIO_ReadPin(Top_up_button_GPIO_Port, Top_up_button_Pin) == GPIO_PIN_RESET){
+		else if((current_topup_state == 0 && last_topup_state == 1)&& (flag == 1 )){
+			if(HAL_GPIO_ReadPin(Top_up_button_GPIO_Port, Top_up_button_Pin) == GPIO_PIN_RESET){
 			top_up_dosing();
+			flag = 0;
+			}
+		}
+		else if ((current_topup_state == 1 && last_topup_state == 1)&& flag == 0){
+			if ((HAL_GPIO_ReadPin(Top_up_button_GPIO_Port, Top_up_button_Pin) == GPIO_PIN_SET)&& flag == 0){
+			stop_dosing();
+			flag = 1 ;
+			}
 		}
 
-		if (pulseCount >= desired_pulses){
+		if (pulseCount > desired_pulses){
 			stop_dosing();
 			pulseCount = 0 ;
-
 		}
+
+		last_stop_state = current_stop_state;
+		last_start_state = current_start_state;
+		last_topup_state = current_topup_state;
+
+
 	}
 	/* USER CODE END 3 */
 }
@@ -197,17 +229,25 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	if (GPIO_Pin == water_flow_sensor_Pin)
 	{
 		pulseCount ++ ;
+		printf("%" PRId16 "\n", pulseCount);
 	}
 }
 
 void start_dosing(void){
 	HAL_GPIO_WritePin(solenoid_valve_GPIO_Port, solenoid_valve_Pin, GPIO_PIN_SET);
+	printf("Start\n");
 }
 void stop_dosing(void){
+	HAL_Delay(500);
 	HAL_GPIO_WritePin(solenoid_valve_GPIO_Port, solenoid_valve_Pin, GPIO_PIN_RESET);
+	HAL_Delay(500);
+
+	printf("Stop\n");
 }
 void top_up_dosing(void){
 	HAL_GPIO_WritePin(solenoid_valve_GPIO_Port, solenoid_valve_Pin, GPIO_PIN_SET);
+//	HAL_Delay(1000);
+	printf("Srsob mya\n");
 }
 
 uint16_t calculate_desired_water_amount(uint16_t ingredient_grams){
