@@ -143,12 +143,12 @@ int main(void)
 		else if (current_start_state == 0 && last_start_state == 1) {
 			pulseCount = 0 ;
 			grams = HX711_balance_waight(&my_hx711);
-//		    printf("grams = %" PRId16 "\n", grams);
+		    printf("grams = %" PRId16 "\n", grams);
 			water_ml = calculate_desired_water_amount(grams);
-//		     printf("water_ml = %" PRId16 "\n", water_ml);
+		     printf("water_ml = %" PRId16 "\n", water_ml);
 
 			desired_pulses = map_ml_to_pulses(water_ml);
-//			printf("desired_pulses = %" PRId16 "\n", desired_pulses);
+			printf("desired_pulses = %" PRId16 "\n", desired_pulses);
 			start_dosing();
 		}
 		else if((current_topup_state == 0 && last_topup_state == 1)&& (flag == 1 )){
